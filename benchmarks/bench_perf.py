@@ -8,6 +8,7 @@ HOST = "0.0.0.0"
 PORT = 8000
 ENDPOINT = "/v1/chat/completions"
 BACKEND = "openai-chat"
+SERVED_MODEL_NAME = "Qwen3-Next"
 
 # 新的 7 组评测场景: (name, input_len, output_len, concurrency)
 SCENARIOS = [
@@ -33,8 +34,8 @@ def run_benchmark(name, input_len, output_len, concurrency, run_id):
         "--host", HOST,
         "--port", str(PORT),
         "--backend", BACKEND,
-        "--model", "Qwen3-Next-Metax",
-        "--tokenizer", "/share/Qwen3-Next-80B-A3B-Instruct",
+        "--model", SERVED_MODEL_NAME,
+        "--tokenizer", "Qwen/Qwen3-Next-80B-A3B-Instruct",
         "--dataset-name", "random",
         "--endpoint", ENDPOINT,
         "--ignore-eos",
