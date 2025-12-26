@@ -3,7 +3,6 @@ import re
 import os
 import statistics
 
-# 场景列表必须与运行脚本一致（7个）
 SCENARIOS = [
     "p128d128",
     "p6144d128",
@@ -44,10 +43,8 @@ def compute_extended_stats(values):
     median_val = statistics.median(valid_vals)
     max_val = max(valid_vals)
 
-    # 标准差：单点时为0
     stdev_val = 0.0 if len(valid_vals) == 1 else statistics.stdev(valid_vals)
 
-    # 最大绝对偏差（以σ为单位）
     max_abs_dev = max(abs(x - mean_val) for x in valid_vals)
     if stdev_val > 0:
         sigma_str = f"{max_abs_dev / stdev_val:.2f}σ"
@@ -63,12 +60,12 @@ def compute_extended_stats(values):
     )
 
 def main():
-    # 列宽设置
+    # aligned output
     scene_width = 14
     num_width = 10
     sigma_width = 8
 
-    # 打印表头
+    # headers
     header = (
         f"{'Scenario':<{scene_width}} | "
         f"{'Out Mean':>{num_width}} | {'Out Med':>{num_width}} | {'Out Max':>{num_width}} | {'Out σ':>{num_width}} | {'Out Dev':>{sigma_width}} | "
@@ -77,7 +74,7 @@ def main():
     print(header)
     print("-" * len(header))
 
-    # 只分析 run2, run3, run4
+    # only run2, run3, run4, ignore run1
     RUN_IDS = [2, 3, 4]
 
     for scene in SCENARIOS:
