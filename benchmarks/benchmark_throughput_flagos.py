@@ -12,13 +12,20 @@ SERVED_MODEL_NAME = "Qwen3-Next"
 
 # scenarios (name, input_len, output_len, concurrency)
 SCENARIOS = [
+    # from FlagScale
     ("p128d128",     128,    128,   100),
     ("p6144d128",    6144,   128,   100),
     ("p30720d128",   30720,  128,   100),
     ("p128d6144",    128,    6144,  100),
     ("p6144d6144",   6144,   6144,  100),
     ("p30720d6144",  30720,  6144,  100),
+    # from FlagRelease
     ("p4096d2048",   4096,   2048,  64),
+    # from vendors
+    ("p6144d1024",   6144,  1024,   100),
+    ("p4096d1024",   4096,  1024,   100),
+    ("p2048d1024",   2048,  1024,   100),
+    ("p1024d1024",   1024,  1024,   100),
 ]
 
 LOG_DIR = "vllm_bench_logs"
