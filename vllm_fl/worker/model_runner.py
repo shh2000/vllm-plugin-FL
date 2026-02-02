@@ -22,12 +22,16 @@ import torch.nn as nn
 from tqdm import tqdm
 
 import vllm.envs as envs
-from vllm.attention.backends.abstract import(
+from vllm.v1.attention.backend import (
     AttentionBackend,
+    AttentionCGSupport,
     AttentionMetadata,
+    AttentionMetadataBuilder,
     AttentionType, 
-    MultipleOf)
-from vllm.attention.layer import Attention, MLAAttention
+    MultipleOf,
+)
+from vllm.model_executor.layers.attention.attention import Attention
+from vllm.model_executor.layers.attention.mla_attention import MLAAttention
 from vllm.compilation.counter import compilation_counter
 from vllm.compilation.cuda_graph import CUDAGraphStat #CUDAGraphWrapper
 from vllm.compilation.monitor import set_cudagraph_capturing_enabled
@@ -133,18 +137,16 @@ else:
 from vllm.utils.torch_utils import (
     get_dtype_size,
     kv_cache_dtype_str_to_dtype,
-    supports_dynamo,
+    # supports_dynamo,  # Removed in vLLM 0.15
 )
 from vllm.v1.attention.backends.gdn_attn import GDNAttentionMetadataBuilder
 from vllm.v1.attention.backends.utils import (
-    AttentionCGSupport,
-    AttentionMetadataBuilder,
     CommonAttentionMetadata,
     create_fast_prefill_custom_backend,
     get_dcp_local_seq_lens,
     reorder_batch_to_split_decodes_and_prefills,
-    split_attn_metadata,
 )
+from vllm.v1.worker.ubatch_utils import split_attn_metadata
 from vllm.v1.cudagraph_dispatcher import CudagraphDispatcher
 from vllm.v1.kv_cache_interface import (
     AttentionSpec,
@@ -597,8 +599,7 @@ class ModelRunnerFL(
 
         self.mm_budget = (
             MultiModalBudget(
-                self.model_config,
-                self.scheduler_config,
+                self.vllm_config,
                 self.mm_registry,
             )
             if self.supports_mm_inputs
@@ -3732,7 +3733,7 @@ class ModelRunnerFL(
         if (
             self.vllm_config.compilation_config.mode
             == CompilationMode.STOCK_TORCH_COMPILE
-            and supports_dynamo()
+            and True  # supports_dynamo removed in vLLM 0.15
         ):
             backend = self.vllm_config.compilation_config.init_backend(self.vllm_config)
             compilation_counter.stock_torch_compile_count += 1
@@ -3979,16 +3980,15 @@ class ModelRunnerFL(
         """Dummy data for profiling and precompiling multimodal models."""
         assert self.mm_budget is not None
 
-        dummy_decoder_data = self.mm_registry.get_decoder_dummy_data(
-            model_config=self.model_config,
-            seq_len=self.max_model_len,
+        # Use updated vLLM 0.15 API
+        dummy_mm_inputs = self.mm_registry.get_dummy_mm_inputs(
+            self.model_config,
             mm_counts={modality: 1},
             cache=self.mm_budget.cache,
         )
-        dummy_mm_data = dummy_decoder_data.multi_modal_data
-
+        dummy_mm_item = dummy_mm_inputs["mm_kwargs"][modality][0]
+        assert dummy_mm_item is not None, "Item should not already be cached"
         # Result in the maximum GPU consumption of the model
-        dummy_mm_item = dummy_mm_data[modality][0]
         dummy_mm_items = [dummy_mm_item] * max_items_per_batch
 
         return next(

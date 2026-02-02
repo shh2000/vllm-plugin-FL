@@ -11,16 +11,16 @@ import numpy as np
 import torch
 
 from vllm import envs
-from vllm.attention.backends.abstract import (
+from vllm.v1.attention.backend import (
     AttentionBackend,
     AttentionImpl,
     AttentionType,
     MultipleOf,
     is_quantized_kv_cache,
 )
-from vllm.attention.layer import Attention
-from vllm.attention.ops.common import cp_lse_ag_out_rs
-from vllm.attention.ops.merge_attn_states import merge_attn_states
+from vllm.model_executor.layers.attention.attention import Attention
+# from vllm.attention.ops.common import cp_lse_ag_out_rs  # Moved in v0.15
+# from vllm.attention.ops.merge_attn_states import merge_attn_states  # Moved in v0.15
 
 
 from vllm.config import VllmConfig, get_current_vllm_config, get_layers_from_vllm_config

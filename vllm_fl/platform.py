@@ -12,14 +12,14 @@ from typing_extensions import ParamSpec
 
 import torch
 
-from vllm.attention.backends.registry import AttentionBackendEnum, register_backend
+from vllm.v1.attention.backends.registry import AttentionBackendEnum, register_backend
 from vllm.logger import init_logger
 
 from vllm.platforms import Platform, PlatformEnum
 from vllm.platforms.interface import DeviceCapability
 
 if TYPE_CHECKING:
-    from vllm.attention.selector import AttentionSelectorConfig
+    from vllm.v1.attention.selector import AttentionSelectorConfig
     from vllm.config import VllmConfig
     from vllm.config.cache import CacheDType
 else:
@@ -114,7 +114,11 @@ class PlatformFL(Platform):
         parallel_config = vllm_config.parallel_config
         model_config = vllm_config.model_config
 
-        parallel_config.worker_cls = "vllm_fl.worker.worker.WorkerFL"
+        # Use native vLLM worker when FL_USE_NATIVE_WORKER=1
+        if os.environ.get("FL_USE_NATIVE_WORKER", "0") == "1":
+            parallel_config.worker_cls = "vllm.v1.worker.gpu_worker.Worker"
+        else:
+            parallel_config.worker_cls = "vllm_fl.worker.worker.WorkerFL"
 
         cache_config = vllm_config.cache_config
         if cache_config and cache_config.block_size is None:
@@ -199,9 +203,9 @@ class PlatformFL(Platform):
                     backend_path = "vllm_fl.dispatch.backends.flaggems.impl.attention.AttentionFLBackend"
             else:
                 # For CUDA and other devices, use vLLM native backend
-                from vllm.attention.backends.registry import AttentionBackendEnum
+                from vllm.v1.attention.backends.registry import AttentionBackendEnum
                 if use_mla:
-                    backend_path = AttentionBackendEnum.MLA.get_path()
+                    backend_path = AttentionBackendEnum.FLASH_ATTN_MLA.get_path()
                 else:
                     backend_path = AttentionBackendEnum.FLASH_ATTN.get_path()
 
